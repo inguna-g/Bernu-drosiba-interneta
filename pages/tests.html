@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vecāku zināšanu tests - Bērnu Digitālā Drošība</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        /* Pievienojam stilus, kas nepieciešami jaunajai funkcionalitātei */
+        .question-container {
+            display: none; /* Sākumā slēpjam visus jautājumus */
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .question-container.active {
+            display: block; /* Rādām tikai aktīvo jautājumu */
+        }
+        .options-container label {
+            display: block;
+            margin-bottom: 10px;
+            cursor: pointer;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            background-color: #fff;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .options-container label:hover {
+            background-color: #eef;
+        }
+        .options-container input[type="radio"] {
+            margin-right: 10px;
+        }
+        .feedback {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .feedback.correct {
+            background-color: #e6ffe6;
+            color: #28a745;
+            border-color: #28a745;
+        }
+        .feedback.incorrect {
+            background-color: #ffe6e6;
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+        /* Jauns stils neitrālai atgriezeniskajai saitei */
+        .feedback.neutral {
+            background-color: #f0f8ff; /* Gaiši zils vai līdzīgs neitrāls tonis */
+            color: #0056b3; /* Tumšāks zils */
+            border-color: #007bff;
+        }
+        .button-nav {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .quiz-result {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+        .quiz-result h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .quiz-result p {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        .quiz-result strong {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Bērnu Digitālā Drošība</h1>
+        <nav class="main-nav">
+            <ul>
+                <li><a href="../index.html">Sākums</a></li>
+                <li><a href="tests.html" class="active">Tests</a></li>
+                <li><a href="riski.html">Riski</a></li>
+                <li><a href="resursi.html">Resursi</a></li>
+                <li><a href="vecuma-padomi.html">Padomi pa vecumposmiem</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="content-section test-container">
+            <h2>Novērtējiet savas zināšanas</h2>
+            <p>Atbildiet uz jautājumiem, lai novērtētu, cik labi protat sargāt savu bērnu internetā.</p>
+
+            <div id="quizQuestionsContainer">
+                </div>
+
+            <div class="button-nav">
+                <button type="button" id="prevQuestionBtn" class="button" style="display:none;">Iepriekšējais jautājums</button>
+                <button type="button" id="nextQuestionBtn" class="button">Nākamais jautājums</button>
+                <button type="button" id="submitQuiz" class="button" style="display:none;">Iesniegt testu</button>
+            </div>
+
+            <div id="quizResult" class="quiz-result" style="display:none;">
+                <h3>Jūsu testa rezultāts: <span id="scoreDisplay"></span> punkti</h3>
+                <p>Līmenis: <strong id="levelDisplay"></strong></p>
+                <p id="levelFeedback"></p>
+                <button type="button" class="button" onclick="location.reload()">Atkārtot testu</button>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p> 2025 Bērnu Digitālā Drošība.<br> Veidoja Inguna Eihentāle ar Gemini AI un Sora AI. <br> Satura avots:<a href="ttps://www.internetmatters.org">internetmatters.org</a></p>
+    </footer>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                questionText: "Kura no šīm situācijām tiek uzskatīta par augsta riska situāciju bērnam tiešsaistē?",
+                options: [
+                    { text: "Izglītojošu spēļu spēlēšana uzticamā platformā", points: 0 },
+                    { text: "Tērzēšana ar svešinieku, kurš pieprasa personisku informāciju.", points: 1 }
+                ],
+                correctOptionIndex: 1, // B
+                feedback: "Svešinieki internetā var uzdoties par kādu citu, var būt krāpnieki, vai gribēt nodarīt bērnam pāri."
+            },
+            {
+                id: 2,
+                questionText: "Kurš no šiem veidiem ir efektīvs veids, kā palīdzēt bērnam izprast drošību tiešsaistē?",
+                options: [
+                    { text: "Teikt viņiem, lai neuztraucas par tiešsaistes riskiem", points: 0 },
+                    { text: "Diskusijas par konkrētām tiešsaistes briesmām, piemēram, kibermobingu un plēsoņām.", points: 1 }
+                ],
+                correctOptionIndex: 1, // B
+                feedback: "Konkrētu apdraudējumu izskaidrošana palīdz bērniem izprast riskus."
+            },
+            {
+                id: 3,
+                questionText: "Jūsu bērns ik dienas pie ekrāniem pavada aptuveni 3 stundas, neskaitot mācības. Kāda rīcība ir vispiemērotākā?",
+                options: [
+                    { text: "Ignorējiet to, jo tas ir normāls daudzums.", points: 0 },
+                    { text: "Kopā ar bērnu nosakiet konsekventus ikdienas ekrāna laika ierobežojumus.", points: 1 }
+                ],
+                correctOptionIndex: 1, // B
+                feedback: "Kopīga robežu noteikšana veicina veselīgus ieradumus."
+            },
+            {
+                id: 4,
+                questionText: "Kura metode ir visefektīvākā, lai uzraudzītu bērna aktivitātes tiešsaistē?",
+                options: [
+                    { text: "Regulāra pārlūkošanas vēstures pārskatīšana", points: 1 },
+                    { text: "Pilnīga uzticēšanās viņiem, nepārbaudot", points: 0 }
+                ],
+                correctOptionIndex: 0, // A
+                feedback: "Regulāra pārskatīšana palīdz laicīgi saskatīt riskus un novērst tos."
+            },
+            {
+                id: 5,
+                questionText: "Kurš no šiem vārdiem vislabāk raksturo \"zonu bez ekrāna\"?",
+                options: [
+                    { text: "Telpa, kurā ģimenes maltīšu vai gulētiešanas laikā nav atļauts lietot ierīces.", points: 1 },
+                    { text: "Vieta, kur bērniem ir atļauts neierobežoti pavadīt laiku pie ekrāna", points: 0 }
+                ],
+                correctOptionIndex: 0, // A
+                feedback: "Ierīču aizliegums noteiktās zonās veicina ciešākas ģimenes saites."
+            },
+            {
+                id: 6,
+                questionText: "Kura no šīm pazīmēm liecina, ka laika pavadīšana ar digitālām ierīcēm negatīvi ietekmē jūsu bērnu?",
+                options: [
+                    { text: "Skolā viņi ir sociāli aktīvāki.", points: 0 },
+                    { text: "Viņiem ir grūtības gulēt, un viņi ir aizkaitināmi, kad neizmanto ierīci.", points: 1 }
+                ],
+                correctOptionIndex: 1, // B
+                feedback: "Miega problēmas un aizkaitināmība var liecināt par problemātisku ekrānlaiku."
+            },
+            {
+                id: 7,
+                questionText: "Cik bieži ar bērnu pārrunājat tiešsaistes drošības jautājumus?",
+                options: [
+                    { text: "Nekad", points: 0 },
+                    { text: "Tikai tad, ja kaut kas atgadās", points: 0 },
+                    { text: "Regulāri, kā daļu no ikdienas sarunām", points: 1 }
+                ],
+                correctOptionIndex: 2, // C
+                feedback: "Regulāras sarunas veicina informētību."
+            },
+            {
+                id: 8,
+                questionText: "Cik pārliecināts esat par savām zināšanām par tiešsaistes riskiem, piemēram, kibermobingu un plēsoņām?",
+                options: [
+                    { text: "Nav pārliecināts", points: 0 },
+                    { text: "Nedaudz pārliecināts", points: 0 },
+                    { text: "Mēreni pārliecināts", points: 0 },
+                    { text: "Ļoti pārliecināts", points: 1 } // Tikai šī dod punktu, bet atgriezeniskā saite ir neitrāla visām.
+                ],
+                correctOptionIndex: 3, // D (šī atbilde dod punktu, bet vizuāli netiks izcelta kā "pareiza")
+                feedback: "Šis jautājums mēra jūsu pašvērtējumu. Katra atbilde ir svarīga, lai novērtētu jūsu pašreizējo izpratnes līmeni. Svarīgākais ir nepārtraukti mācīties un pilnveidot savas zināšanas par tiešsaistes riskiem, lai efektīvāk pasargātu savu bērnu."
+            },
+            {
+                id: 9,
+                questionText: "Kuras no šīm stratēģijām jūs izmantojat, lai pārvaldītu bērna ekrānlaiku?",
+                options: [
+                    { text: "Dienas limitu noteikšana un to ievērošana", points: 1 },
+                    { text: "Neierobežoju pieeju ekrāniem", points: 0 }
+                ],
+                correctOptionIndex: 0, // A
+                feedback: "Konsekventi ierobežojumi ir ļoti efektīvi."
+            },
+            {
+                id: 10,
+                questionText: "Kad bērns izmanto ekrānus, cik bieži jūs atrodaties tajā pašā telpā?",
+                options: [
+                    { text: "Vienmēr", points: 1 },
+                    { text: "Dažreiz", points: 0 }
+                ],
+                correctOptionIndex: 0, // A
+                feedback: "Klātbūtne veicina uzraudzību un iespēju nekavējoties reaģēt uz problēmām."
+            },
+            {
+                id: 11,
+                questionText: "Kurš ir atbilstoša satura ierobežojuma piemērs bērniem tiešsaistē?",
+                options: [
+                    { text: "Piekļuves atļaušana visām vietnēm, tostarp pieaugušo saturam.", points: 0 },
+                    { text: "Vecāku kontroles rīku izmantošana, lai bloķētu neatbilstošu saturu.", points: 1 }
+                ],
+                correctOptionIndex: 1, // B
+                feedback: "Vecāku kontrole ir nepieciešama, lai filtrētu saturu un pasargātu bērnu no nevēlamas informācijas."
+            },
+            {
+                id: 12,
+                questionText: "Kā jūsu ekrāna lietošanas paradumi ietekmē jūsu bērna ekrānu lietošanas paradumus?",
+                options: [
+                    { text: "Tiem nav ietekmes", points: 0 },
+                    { text: "Jūsu biežā ierīces lietošana var veicināt līdzīgu uzvedību bērnam.", points: 1 }
+                ],
+                correctOptionIndex: 1, // B
+                feedback: "Vecāku uzvedība bieži vien ir paraugs bērniem. Rādiet labu piemēru!"
+            },
+            {
+                id: 13,
+                questionText: "Cik bieži jūs iesaistāties ģimenes aktivitātēs, kas nav saistītas ar ekrāniem?",
+                options: [
+                    { text: "Ļoti bieži", points: 1 },
+                    { text: "Dažreiz", points: 0 }
+                ],
+                correctOptionIndex: 0, // A
+                feedback: "Regulāras aktivitātes bez ekrāna veicina līdzsvarotu attīstību un stiprina ģimenes saites."
+            },
+            {
+                id: 14,
+                questionText: "Kura no šīm stratēģijām ir laba, lai palīdzētu bērnam attīstīt veselīgus ekrāna lietošanas paradumus?",
+                options: [
+                    { text: "Ļaujiet viņiem izmantot ekrānus, kad vien viņi vēlas.", points: 0 },
+                    { text: "Skaidru noteikumu noteikšana par ekrāna laika pavadīšanu un to apspriešana.", points: 1 }
+                ],
+                correctOptionIndex: 1, // B
+                feedback: "Ļoti svarīgi ir skaidri noteikumi un atklātas diskusijas par to, kāpēc šie noteikumi ir svarīgi."
+            },
+            {
+                id: 15,
+                questionText: "Kad pamanāt, ka jūsu bērns ilgstoši atrodas pie ekrāniem, kāda ir labākā pieeja?",
+                options: [
+                    { text: "Ignorējiet to; viņi apstāsies dabiski", points: 0 },
+                    { text: "Uzmanīgi atgādiniet viņiem par saskaņotajiem ierobežojumiem un ierosiniet pārtraukumu vai citu aktivitāti.", points: 1 }
+                ],
+                correctOptionIndex: 1, // B
+                feedback: "Maigi atgādinājumi un alternatīvu piedāvāšana palīdz bērnam veidot pašregulāciju."
+            },
+            {
+                id: 16,
+                questionText: "Kāds ir risks, ja bērns tiešsaistē izpauž personisku informāciju?",
+                options: [
+                    { text: "Risks nepastāv.", points: 0 },
+                    { text: "Lielāka kibermobinga, krāpšanas vai plēsoņu piesaistes iespēja.", points: 1 }
+                ],
+                correctOptionIndex: 1, // B
+                feedback: "Daloties ar personisku informāciju, bērns kļūst neaizsargātāks pret kiberuzbrukumiem un krāpniecību."
+            },
+            {
+                id: 17,
+                questionText: "Cik labi esat iepazinies ar tādiem resursiem kā drošības ceļveži vai vecāku kontrole?",
+                options: [
+                    { text: "Nav pazīstams vispār", points: 0 },
+                    { text: "Nedaudz pazīstams", points: 1 },
+                    { text: "Vidēji pazīstams", points: 2 },
+                    { text: "Ļoti pazīstami un tos izmantojat", points: 3 }
+                ],
+                correctOptionIndex: 3, // D
+                feedback: "Labāka informētība un resursu izmantošana nozīmē labāku drošības praksi un spēju pasargāt bērnu."
+            },
+            {
+                id: 18,
+                questionText: "Vai izmantojat kādas vecāku kontroles programmas vai iestatījumus?",
+                options: [
+                    { text: "Jā, visās ierīcēs", points: 3 },
+                    { text: "Jā, dažās ierīcēs", points: 2 },
+                    { text: "Nē, bet plānoju", points: 1 },
+                    { text: "Nē, es neticu kontrolei.", points: 0 }
+                ],
+                correctOptionIndex: 0, // A
+                feedback: "Vecāku kontroles programmas ir ļoti efektīvas, lai nodrošinātu pietiekamu uzraudzību un filtrētu nevēlamu saturu."
+            },
+            {
+                id: 19,
+                questionText: "Cik bieži jūs runājat ar bērnu par viņa pieredzi tiešsaistē?",
+                options: [
+                    { text: "Ikdienā vai regulāri", points: 3 },
+                    { text: "Reizi nedēļā", points: 2 },
+                    { text: "Reti", points: 1 },
+                    { text: "Nekad", points: 0 }
+                ],
+                correctOptionIndex: 0, // A
+                feedback: "Regulāras sarunas veicina atklātību, drošību un savstarpēju uzticību, ļaujot bērnam justies droši, daloties ar problēmām."
+            },
+            {
+                id: 20,
+                questionText: "Kuru jomu visvairāk vēlaties uzlabot, pamatojoties uz saviem ieradumiem un zināšanām?",
+                options: [
+                    { text: "Lielāka izpratne par riskiem", points: 1 },
+                    { text: "Robežu noteikšana un ievērošana", points: 1 },
+                    { text: "Rūpīgāka darbību uzraudzība", points: 1 },
+                    { text: "Viss iepriekš minētais", points: 4 }
+                ],
+                correctOptionIndex: 3, // D
+                feedback: "Apsveicami, ka vēlaties pilnveidoties visos aspektos! Tas liecina par atbildīgu pieeju bērnu digitālajai drošībai."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(questions.length).fill(null); // Uzglabās katra jautājuma atbildi (izvēlētās opcijas indeksu)
+        let totalScore = 0;
+
+        const quizQuestionsContainer = document.getElementById('quizQuestionsContainer');
+        const prevQuestionBtn = document.getElementById('prevQuestionBtn');
+        const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+        const submitQuizBtn = document.getElementById('submitQuiz');
+        const quizResultDiv = document.getElementById('quizResult');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const levelDisplay = document.getElementById('levelDisplay');
+        const levelFeedback = document.getElementById('levelFeedback');
+
+        function displayQuestion() {
+            quizQuestionsContainer.innerHTML = ''; // Notīra iepriekšējo jautājumu
+            const q = questions[currentQuestionIndex];
+
+            const questionDiv = document.createElement('div');
+            questionDiv.classList.add('question-container', 'active');
+            questionDiv.innerHTML = `
+                <h3>${currentQuestionIndex + 1}. ${q.questionText}</h3>
+                <div class="options-container" id="options-q${q.id}">
+                    ${q.options.map((option, optIndex) => `
+                        <label>
+                            <input type="radio" name="question${q.id}" value="${optIndex}" ${userAnswers[currentQuestionIndex] === optIndex ? 'checked' : ''}>
+                            ${option.text}
+                        </label>
+                    `).join('')}
+                </div>
+                <div class="feedback" id="feedback-q${q.id}" style="display:none;"></div>
+            `;
+            quizQuestionsContainer.appendChild(questionDiv);
+
+            // Pārbauda, vai ir atbildēts, un parāda atgriezenisko saiti, ja ir
+            if (userAnswers[currentQuestionIndex] !== null) {
+                showFeedback(q, userAnswers[currentQuestionIndex]);
+                disableOptions(q.id);
+            } else {
+                enableOptions(q.id);
+            }
+
+            updateNavigationButtons();
+
+            // Pievieno notikumu klausītājus radio pogām, lai apstrādātu atbildi nekavējoties
+            const optionsContainer = document.getElementById(`options-q${q.id}`);
+            optionsContainer.querySelectorAll(`input[name="question${q.id}"]`).forEach(radio => {
+                radio.addEventListener('change', (event) => {
+                    const selectedOptIndex = parseInt(event.target.value);
+                    userAnswers[currentQuestionIndex] = selectedOptIndex;
+                    showFeedback(q, selectedOptIndex);
+                    disableOptions(q.id); // Pēc atbildes izvēles atspējo opcijas
+                });
+            });
+        }
+
+        function showFeedback(question, selectedOptionIndex) {
+            const feedbackDiv = document.getElementById(`feedback-q${question.id}`);
+            const selectedOptionText = question.options[selectedOptionIndex].text;
+
+            // Notīrām visas iepriekšējās klases
+            feedbackDiv.classList.remove('correct', 'incorrect', 'neutral');
+
+            feedbackDiv.innerHTML = `Jūsu atbilde: <strong>${selectedOptionText}</strong>.`;
+
+            // Speciāla apstrāde 8. jautājumam
+            if (question.id === 8) {
+                feedbackDiv.classList.add('neutral');
+                feedbackDiv.innerHTML += ` <br> ${question.feedback}`;
+            } else {
+                const isCorrect = selectedOptionIndex === question.correctOptionIndex;
+                if (isCorrect) {
+                    feedbackDiv.classList.add('correct');
+                    feedbackDiv.innerHTML += ` <br> ✅ Pareizi! ${question.feedback}`;
+                } else {
+                    feedbackDiv.classList.add('incorrect');
+                    feedbackDiv.innerHTML += ` <br> ❌ Nepareizi. ${question.feedback}`;
+                }
+            }
+            feedbackDiv.style.display = 'block';
+        }
+
+
+        function disableOptions(questionId) {
+            const optionsContainer = document.getElementById(`options-q${questionId}`);
+            optionsContainer.querySelectorAll(`input[name="question${questionId}"]`).forEach(radio => {
+                radio.disabled = true;
+            });
+        }
+
+        function enableOptions(questionId) {
+            const optionsContainer = document.getElementById(`options-q${questionId}`);
+            optionsContainer.querySelectorAll(`input[name="question${questionId}"]`).forEach(radio => {
+                radio.disabled = false;
+            });
+        }
+
+        function updateNavigationButtons() {
+            prevQuestionBtn.style.display = currentQuestionIndex > 0 ? 'inline-block' : 'none';
+            nextQuestionBtn.style.display = currentQuestionIndex < questions.length - 1 ? 'inline-block' : 'none';
+            submitQuizBtn.style.display = currentQuestionIndex === questions.length - 1 ? 'inline-block' : 'none';
+        }
+
+        function goToNextQuestion() {
+            if (userAnswers[currentQuestionIndex] === null) {
+                alert('Lūdzu, atbildiet uz jautājumu pirms pārejat tālāk!');
+                return;
+            }
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            }
+        }
+
+        function goToPrevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        }
+
+        function calculateResults() {
+            // Pārbauda, vai uz pēdējo jautājumu ir atbildēts
+            if (userAnswers[currentQuestionIndex] === null) {
+                alert('Lūdzu, atbildiet uz pēdējo jautājumu pirms testa iesniegšanas!');
+                return;
+            }
+
+            totalScore = 0;
+            let allAnswered = true;
+
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i] === null) {
+                    allAnswered = false;
+                    break;
+                }
+                const q = questions[i];
+                const selectedOptionIndex = userAnswers[i];
+                // Punkti tiek piešķirti tikai, ja atbilde ir pareizā opcija (correctOptionIndex)
+                // Izņēmums ir jautājums 8, kur punkts tiek piešķirts, ja izvēlētā opcija dod punktu.
+                if (q.id === 8) {
+                     totalScore += q.options[selectedOptionIndex].points;
+                } else if (selectedOptionIndex === q.correctOptionIndex) {
+                    totalScore += q.options[selectedOptionIndex].points;
+                }
+            }
+
+            if (!allAnswered) {
+                alert('Lūdzu, atbildiet uz visiem jautājumiem pirms rezultātu iesniegšanas!');
+                return;
+            }
+
+            scoreDisplay.textContent = totalScore;
+            levelDisplay.textContent = getLevelText(totalScore).title;
+            levelFeedback.textContent = getLevelText(totalScore).description;
+
+            quizQuestionsContainer.style.display = 'none';
+            prevQuestionBtn.style.display = 'none';
+            nextQuestionBtn.style.display = 'none';
+            submitQuizBtn.style.display = 'none';
+            quizResultDiv.style.display = 'block';
+            window.scrollTo(0, 0); // Ritina uz lapas augšu, lai parādītu rezultātus
+        }
+
+        function getLevelText(score) {
+            // Maksimālais iespējamais punktu skaits:
+            // Jautājumi 1-7: 1 punkts * 7 = 7 punkti
+            // Jautājums 8: 1 punkts (ja izvēlēts "Ļoti pārliecināts") = 1 punkts
+            // Jautājumi 9-16: 1 punkts * 8 = 8 punkti
+            // Jautājums 17: maks 3 punkti
+            // Jautājums 18: maks 3 punkti
+            // Jautājums 19: maks 3 punkti
+            // Jautājums 20: maks 4 punkti
+            // Kopā: 7 + 1 + 8 + 3 + 3 + 3 + 4 = 29 punkti.
+            
+            if (score >= 25) {
+                return {
+                    title: "Izcili! Vecāks-Eksperts Digitālajā Drošībā.",
+                    description: "Jums ir izcilas zināšanas un praktiskā pieredze bērnu digitālās drošības jomā. Jūs esat lielisks paraugs citiem vecākiem un spējat efektīvi pasargāt savu bērnu tiešsaistē."
+                };
+            } else if (score >= 18) {
+                return {
+                    title: "Lieliski! Informēts un Atbildīgs Vecāks.",
+                    description: "Jums ir ļoti laba izpratne par bērnu digitālās drošības pamatprincipiem un riskiem. Turpiniet pilnveidoties un sekot līdzi jaunākajām tendencēm, lai saglabātu augstu drošības līmeni."
+                };
+            } else if (score >= 10) {
+                return {
+                    title: "Vidējs līmenis. Uzlabojumu Potenciāls.",
+                    description: "Jums ir pamata zināšanas, bet ir jomas, kurās varat būtiski uzlabot savu izpratni un praksi. Iesakām rūpīgi iepazīties ar mūsu resursu sadaļu, lai apgūtu vairāk par tiešsaistes drošības rīkiem un stratēģijām."
+                };
+            } else {
+                return {
+                    title: "Nepieciešami būtiski uzlabojumi. Laiks mācīties!",
+                    description: "Jūsu zināšanas par bērnu digitālo drošību ir ierobežotas. Tas ir normāli, taču ir ļoti svarīgi nekavējoties sākt apgūt šo tēmu, lai pasargātu savu bērnu no potenciālajiem tiešsaistes draudiem. Sāciet ar sadaļām par riskiem un padomiem."
+                };
+            }
+        }
+
+        // Sākuma ielāde
+        document.addEventListener('DOMContentLoaded', () => {
+            displayQuestion();
+        });
+
+        nextQuestionBtn.addEventListener('click', goToNextQuestion);
+        prevQuestionBtn.addEventListener('click', goToPrevQuestion);
+        submitQuizBtn.addEventListener('click', calculateResults);
+    </script>
+</body>
+</html>
